@@ -1,0 +1,3 @@
+defaults:
+  - data: boosting_base
+  - pipeline: boosting_base
