@@ -1,4 +1,0 @@
-_target_: src.Pipeline
-base_model:
-  _target_: sklearn.dummy.DummyClassifier
-  strategy: most_frequent
