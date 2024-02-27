@@ -53,7 +53,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()
     test_predictions["class"] = algorithm.predict(test_data[FEATURES])
-    test_predictions.to_csv(save_path)
+    test_predictions.to_csv(save_path, index=False)
 
 
 if __name__ == "__main__":
