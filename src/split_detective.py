@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import xlogy
+from src.operations import EqualOperation, MoreOrEqualOperation, LessOrEqualOperation
 
 
 def entropy(y_values: np.ndarray) -> float:
@@ -22,36 +23,45 @@ class SplitDetective:
 
     def get_best_feature(self):
         # get information gains of all features
-        best_split_vals, best_igs = map(list, zip(*[self._info_gain(feature_id) for feature_id in self.feature_ids]))
+        best_operations, best_igs = map(list, zip(*[self._info_gain(feature_id) for feature_id in self.feature_ids]))
 
         best_feature_idx = np.argmax(best_igs)
 
-        return self.feature_ids[best_feature_idx], best_split_vals[best_feature_idx]
+        return self.feature_ids[best_feature_idx], best_operations[best_feature_idx]
 
     def _info_gain(self, feature_id: int):
         # calculate information gain if split target feature
-        best_split_val, best_entropy_cond = self._cond_entropy(feature_id)
+        best_operation, best_entropy_cond = self._cond_entropy(feature_id)
 
         best_ig = self.cur_entropy - best_entropy_cond
-        return best_split_val, best_ig
+        return best_operation, best_ig
 
     def _cond_entropy(self, feature_id: int):
-        # get feature values and corresponding counts of target feature
-        feature_vals, val_counts = np.unique(self.x_values[:, feature_id], return_counts=True)
-        all_probabilities = val_counts / self.x_values.shape[0]
-        # calculate probabilities of each feature value of target feature
+        # get feature values to search the split from
+        feature_vals = np.unique(self.x_values[:, feature_id])
 
-        # indices, where target feature is equal to each of the feature values
-        equal_idx = [self.x_values[:, feature_id] == val for val in feature_vals]
-        # indices, where target feature is not equal to each of the feature values
-        n_equal_idx = [self.x_values[:, feature_id] != val for val in feature_vals]
+        true_idx = []
+        false_idx = []
+        probs = []
+
+        operations_fun_array = [EqualOperation] # , MoreOrEqualOperation, LessOrEqualOperation
+        for operation_fun in operations_fun_array:
+            for condition in feature_vals:
+                operation = operation_fun(condition=condition)
+
+                true_idx.append([operation(val) for val in self.x_values[:, feature_id]])
+                false_idx.append([~operation(val) for val in self.x_values[:, feature_id]])
+                probs.append(np.sum([operation(val) for val in self.x_values[:, feature_id]]) / self.x_values.shape[0])
 
         # conditional entropies of each value of each feature value
         H_cond = [
             entropy(self.y_values[eq_idx]) * p + entropy(self.y_values[neq_idx]) * (1 - p)
-            for (eq_idx, neq_idx, p) in zip(equal_idx, n_equal_idx, all_probabilities)
+            for (eq_idx, neq_idx, p) in zip(true_idx, false_idx, probs)
         ]
 
         # get best feature value
         best_id = np.argmax(H_cond)
-        return feature_vals[best_id], H_cond[best_id]
+
+        best_val = feature_vals[int(best_id % (len(H_cond) / len(operations_fun_array)))]
+        best_operation = operations_fun_array[int(best_id // (len(H_cond) / len(operations_fun_array)))]
+        return best_operation(condition=best_val), H_cond[best_id]

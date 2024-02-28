@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from src.node import Node
+from src.encoder import LabelEncoder
 from src.split_detective import SplitDetective
 
 
@@ -11,13 +12,30 @@ class BaselineDecisionTreeClassifier:
     def __init__(self, max_depth: int, min_samples_split: int):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.encoders = {}
 
         self.root_node = None
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
+        x_train = x_train.copy()
+        y_train = y_train.copy()
+
+        for col_name in x_train.select_dtypes(include=["object"]):
+            encoder = LabelEncoder()
+
+            encoder.fit(x_train[col_name].values)
+            self.encoders[col_name] = encoder
+
+            x_train[col_name] = encoder.encode(x_train[col_name].values)
+
         self.root_node = self._build_node(x_train.values, y_train.values, None)
 
     def predict(self, x_test: pd.DataFrame):
+        x_test = x_test.copy()
+
+        for col_name, encoder in self.encoders.items():
+            x_test[col_name] = encoder.encode(x_test[col_name].values)
+
         if self.root_node is None:
             raise ValueError("Train the model first!")
 
@@ -47,12 +65,12 @@ class BaselineDecisionTreeClassifier:
             return node
 
         sd = SplitDetective(x_values, y_values)
-        best_feature_id, best_split_value = sd.get_best_feature()
+        best_feature_id, best_operation = sd.get_best_feature()
         node.split_feature_id = best_feature_id
-        node.split_value = best_split_value
+        node.operation = best_operation
 
-        node.left = self._init_new_node(x_values, y_values, node, "left")
-        node.right = self._init_new_node(x_values, y_values, node, "right")
+        node.true_node = self._init_new_node(x_values, y_values, node, "true_node")
+        node.false_node = self._init_new_node(x_values, y_values, node, "false_node")
 
         return node
 
@@ -60,10 +78,10 @@ class BaselineDecisionTreeClassifier:
         new_node = Node()
         new_node.set_height(node.height + 1)
 
-        if type == "left":
-            idx = x_values[:, node.split_feature_id] == node.split_value
+        if type == "true_node":
+            idx = [node.operation(val) for val in x_values[:, node.split_feature_id]]
         else:
-            idx = x_values[:, node.split_feature_id] != node.split_value
+            idx = [~node.operation(val) for val in x_values[:, node.split_feature_id]]
 
         x_values = x_values[idx]
         y_values = y_values[idx]
