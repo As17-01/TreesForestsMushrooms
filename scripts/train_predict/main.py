@@ -2,6 +2,7 @@ import pathlib
 import sys
 
 import hydra
+import numpy as np
 import omegaconf
 import pandas as pd
 from hydra_slayer import Registry
@@ -13,7 +14,7 @@ sys.path.append("../../")
 
 import src
 
-FEATURES = ["does-bruise-or-bleed", "habitat", "season", "cap-diameter", "stem-height", "stem-width"]
+FEATURES = ["does-bruise-or-bleed", "habitat", "season"] # , "cap-diameter", "stem-height", "stem-width"
 TARGET = "class"
 
 
@@ -42,7 +43,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
         val = data.iloc[val_index]
 
         algorithm.fit(train[FEATURES], train[TARGET])
-        predictions = algorithm.predict(val[FEATURES])
+        predictions = np.where(algorithm.predict(val[FEATURES]) > 0.5, 1, 0)
 
         score = f1_score(y_true=val[TARGET], y_pred=predictions, average="macro")
         logger.info(f"Fold {i} F1: {score}")
@@ -52,7 +53,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
 
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()
-    test_predictions["class"] = algorithm.predict(test_data[FEATURES])
+    test_predictions["class"] = np.where(algorithm.predict(test_data[FEATURES]) > 0.5, 1, 0)
     test_predictions.to_csv(save_path, index=False)
 
 

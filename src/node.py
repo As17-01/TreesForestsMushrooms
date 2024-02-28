@@ -1,17 +1,26 @@
+import numpy as np
+
+
 class Node:
     def __init__(self):
-        self.type = None
         self.height = 1
-        self.entropy = None
-        self.n_samples = None
 
         # if splitting
-        self.IG = None
         self.split_feature_id = None
-        self.split_feature = None
         self.split_value = None
         self.left = None
         self.right = None
 
         # if terminating
-        self.label = None
+        self.score = None
+
+    def set_height(self, height: int):
+        self.height = height
+
+    def forward(self, item: np.ndarray):
+        if self.left is None and self.right is None:
+            return self.score
+        if item[self.split_feature_id] == self.split_value:
+            return self.left.forward(item)
+        else:
+            return self.right.forward(item)

@@ -1,1 +1,1 @@
-from src.baseline import BaselineDecisionTreeClassifier
+from src.tree import BaselineDecisionTreeClassifier
