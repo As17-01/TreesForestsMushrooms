@@ -25,7 +25,7 @@ class SplitDetective:
         # get information gains of all features
         best_operations, best_igs = map(list, zip(*[self._info_gain(feature_id) for feature_id in self.feature_ids]))
 
-        best_feature_idx = np.argmax(best_igs)
+        best_feature_idx = np.argm(best_igs)
 
         return self.feature_ids[best_feature_idx], best_operations[best_feature_idx]
 
@@ -44,7 +44,7 @@ class SplitDetective:
         false_idx = []
         probs = []
 
-        operations_fun_array = [EqualOperation] # , MoreOrEqualOperation, LessOrEqualOperation
+        operations_fun_array = [EqualOperation, MoreOrEqualOperation, LessOrEqualOperation]
         for operation_fun in operations_fun_array:
             for condition in feature_vals:
                 operation = operation_fun(condition=condition)
@@ -53,15 +53,15 @@ class SplitDetective:
                 false_idx.append([~operation(val) for val in self.x_values[:, feature_id]])
                 probs.append(np.sum([operation(val) for val in self.x_values[:, feature_id]]) / self.x_values.shape[0])
 
-        # conditional entropies of each value of each feature value
         H_cond = [
             entropy(self.y_values[eq_idx]) * p + entropy(self.y_values[neq_idx]) * (1 - p)
             for (eq_idx, neq_idx, p) in zip(true_idx, false_idx, probs)
         ]
 
-        # get best feature value
-        best_id = np.argmax(H_cond)
+        # WHY WAS HERE ARGMAX
+        best_id = np.argmin(H_cond)
 
         best_val = feature_vals[int(best_id % (len(H_cond) / len(operations_fun_array)))]
         best_operation = operations_fun_array[int(best_id // (len(H_cond) / len(operations_fun_array)))]
+
         return best_operation(condition=best_val), H_cond[best_id]

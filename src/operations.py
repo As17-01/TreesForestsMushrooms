@@ -9,7 +9,7 @@ class EqualOperation:
         return a == self.condition
     
     def __repr__(self) -> str:
-        return f"=={self.condition}"
+        return f" == {self.condition}"
     
 class MoreOrEqualOperation:
     def __init__(self, condition: Any):
@@ -19,7 +19,7 @@ class MoreOrEqualOperation:
         return a >= self.condition
     
     def __repr__(self) -> str:
-        return f">={self.condition}"
+        return f" >= {self.condition}"
     
 class LessOrEqualOperation:
     def __init__(self, condition: Any):
@@ -29,4 +29,4 @@ class LessOrEqualOperation:
         return a <= self.condition
     
     def __repr__(self) -> str:
-        return f"<={self.condition}"
+        return f" <= {self.condition}"

@@ -14,7 +14,7 @@ sys.path.append("../../")
 
 import src
 
-FEATURES = ["does-bruise-or-bleed", "habitat", "season"] # , "cap-diameter", "stem-height", "stem-width"
+FEATURES = ["does-bruise-or-bleed", "habitat", "season", "cap-diameter", "stem-height", "stem-width"]
 TARGET = "class"
 
 
@@ -53,6 +53,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
         logger.info(f"Fold {i} train ROC AUC: {score_train}")
 
         metric_history.append(score)
+        break
+
     logger.info(f"ROC AUC: {sum(metric_history) / len(metric_history)}")
 
     logger.info("Predicting...")
