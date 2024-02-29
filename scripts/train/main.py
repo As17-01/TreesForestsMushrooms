@@ -7,7 +7,7 @@ import omegaconf
 import pandas as pd
 from hydra_slayer import Registry
 from loguru import logger
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, f1_score
 from sklearn.model_selection import StratifiedKFold
 
 sys.path.append("../../")
@@ -53,12 +53,22 @@ def main(cfg: omegaconf.DictConfig) -> None:
         logger.info(f"Fold {i} train ROC AUC: {score_train}")
 
         metric_history.append(score)
+        break
 
     logger.info(f"ROC AUC: {sum(metric_history) / len(metric_history)}")
+    
+    best_thr = 0.0
+    best_f1 = 0.0
+    for thr in np.arange(0.0, 1.0, 0.01):
+        cur_f1 = f1_score(y_true=val[TARGET], y_pred=np.where(predictions >= thr, 1, 0), average="macro")
+        if cur_f1 > best_f1:
+            best_thr = thr
+            best_f1 = cur_f1
+    logger.info(f"Best threshold: {best_thr} with F1: {best_f1}")
 
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()
-    test_predictions["class"] = np.where(algorithm.predict(test_data[FEATURES]) > 0.5, 1, 0)
+    test_predictions["class"] = np.where(algorithm.predict(test_data[FEATURES]) >= best_thr, 1, 0)
     test_predictions.to_csv(save_path, index=False)
 
 
