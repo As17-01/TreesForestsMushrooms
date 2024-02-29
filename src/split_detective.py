@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional
 from scipy.special import xlogy
 from src.operations import EqualOperation, MoreOrEqualOperation, LessOrEqualOperation
 
@@ -14,18 +15,21 @@ def entropy(y_values: np.ndarray) -> float:
 
 
 class SplitDetective:
-    def __init__(self, x_values: np.ndarray, y_values: np.ndarray):
+    def __init__(self, x_values: np.ndarray, y_values: np.ndarray, random_state: Optional[int] = None):
         self.x_values = x_values
         self.y_values = y_values
 
         self.feature_ids = np.arange(self.x_values.shape[1])
         self.cur_entropy = entropy(self.y_values)
 
+        self.random_state = random_state
+        np.random.seed(seed=random_state)
+
     def get_best_feature(self):
         # get information gains of all features
         best_operations, best_igs = map(list, zip(*[self._info_gain(feature_id) for feature_id in self.feature_ids]))
 
-        best_feature_idx = np.argm(best_igs)
+        best_feature_idx = np.argmax(best_igs)
 
         return self.feature_ids[best_feature_idx], best_operations[best_feature_idx]
 
@@ -39,6 +43,9 @@ class SplitDetective:
     def _cond_entropy(self, feature_id: int):
         # get feature values to search the split from
         feature_vals = np.unique(self.x_values[:, feature_id])
+        if len(feature_vals) > 100:
+            feature_vals = np.random.uniform(low=np.min(feature_vals), high=np.max(feature_vals), size=100)
+            feature_vals = np.sort(feature_vals)
 
         true_idx = []
         false_idx = []

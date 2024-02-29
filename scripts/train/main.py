@@ -32,7 +32,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
     registry.add_from_module(src, prefix="src.")
     algorithm = registry.get_from_params(**cfg_dct["algorithm"])
 
-    kf = StratifiedKFold(n_splits=3, shuffle=True, random_state=200)
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=200)
 
     logger.info("Training...")
     metric_history = []
@@ -53,7 +53,6 @@ def main(cfg: omegaconf.DictConfig) -> None:
         logger.info(f"Fold {i} train ROC AUC: {score_train}")
 
         metric_history.append(score)
-        break
 
     logger.info(f"ROC AUC: {sum(metric_history) / len(metric_history)}")
 
