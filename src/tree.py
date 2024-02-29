@@ -3,8 +3,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from src.node import Node
 from src.encoder import LabelEncoder
+from src.node import Node
 from src.split_detective import SplitDetective
 
 
@@ -12,14 +12,14 @@ class BaselineDecisionTreeClassifier:
     def __init__(self, max_depth: int, min_samples_split: int):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
-        self.encoders = {}
 
+        self.encoders = {}
         self.root_node = None
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
         x_train = x_train.copy()
         y_train = y_train.copy()
-        
+
         self.encoders = {}
         self.root_node = None
 

@@ -1,7 +1,11 @@
-import numpy as np
 from typing import Optional
+
+import numpy as np
 from scipy.special import xlogy
-from src.operations import EqualOperation, MoreOrEqualOperation, LessOrEqualOperation
+
+from src.operations import EqualOperation
+from src.operations import LessOrEqualOperation
+from src.operations import MoreOrEqualOperation
 
 
 def entropy(y_values: np.ndarray) -> float:

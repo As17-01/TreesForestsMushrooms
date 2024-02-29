@@ -1,6 +1,7 @@
 from typing import Dict
-import pandas as pd
+
 import numpy as np
+
 
 class LabelEncoder:
     def __init__(self):
