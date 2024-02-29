@@ -19,6 +19,9 @@ class BaselineDecisionTreeClassifier:
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
         x_train = x_train.copy()
         y_train = y_train.copy()
+        
+        self.encoders = {}
+        self.root_node = None
 
         for col_name in x_train.select_dtypes(include=["object"]):
             encoder = LabelEncoder()
