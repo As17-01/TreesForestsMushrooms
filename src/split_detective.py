@@ -62,10 +62,7 @@ class SplitDetective:
 
             operations_fun_array = [EqualOperation]  # type: ignore
         else:
-            min_value = np.min(self.x_values[:, feature_id])
-            max_value = np.max(self.x_values[:, feature_id])
-            feature_vals = np.random.uniform(low=min_value, high=max_value, size=500)
-            feature_vals = np.sort(feature_vals)
+            _, feature_vals = np.histogram(self.x_values[:, feature_id], bins="auto")
 
             operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
 
