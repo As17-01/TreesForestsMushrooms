@@ -46,7 +46,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
     train_data.reset_index(drop=True, inplace=True)
     train_index = np.random.choice(np.array(train_data.index), size=int(0.8 * len(train_data)), replace=False)
     is_train = train_data.index.isin(train_index)
-    
+
     train = train_data.iloc[is_train]
     val = train_data.iloc[~is_train]
 
