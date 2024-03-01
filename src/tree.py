@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import numpy as np
@@ -13,7 +15,7 @@ class BaselineDecisionTreeClassifier:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
 
-        self.encoders = {}
+        self.encoders: Dict[str, Any] = {}
         self.root_node = None
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):

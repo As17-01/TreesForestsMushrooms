@@ -1,4 +1,6 @@
+from typing import Callable
 from typing import Optional
+from typing import cast
 
 import numpy as np
 from scipy.special import xlogy
@@ -59,6 +61,7 @@ class SplitDetective:
         for operation_fun in operations_fun_array:
             for condition in feature_vals:
                 operation = operation_fun(condition=condition)
+                operation = cast(Callable, operation)
 
                 true_idx.append([operation(val) for val in self.x_values[:, feature_id]])
                 false_idx.append([~operation(val) for val in self.x_values[:, feature_id]])

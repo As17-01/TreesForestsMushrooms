@@ -13,8 +13,6 @@ kaggle = "^1.5.12"
 loguru = "^0.7.0"
 hydra_slayer = "^0.4.0"
 hydra-core = "^1.3.0"
-scikit-learn = "^1.3.0"
-networkx = "^3.2.1"
 matplotlib = "^3.8.3"
 
 

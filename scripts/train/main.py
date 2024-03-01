@@ -7,8 +7,6 @@ import omegaconf
 import pandas as pd
 from hydra_slayer import Registry
 from loguru import logger
-from sklearn.metrics import roc_auc_score, f1_score
-from sklearn.model_selection import StratifiedKFold
 
 sys.path.append("../../")
 
@@ -18,13 +16,26 @@ FEATURES = ["does-bruise-or-bleed", "habitat", "season", "cap-diameter", "stem-h
 TARGET = "class"
 
 
+def macro_f1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    classes = np.unique(y_true)
+
+    f1_score = 0
+    for cl in classes:
+        tp = np.sum(y_true[y_true == cl] == y_pred[y_true == cl])
+        fp = np.sum(y_true[y_true == cl] != y_pred[y_true == cl])
+        fn = np.sum(y_true[y_true != cl] != y_pred[y_true != cl])
+
+        f1_score += (tp / (tp + (fp + fn) / 2)) / len(classes)
+    return f1_score
+
+
 @hydra.main(config_path="configs", config_name="config", version_base="1.2")
 def main(cfg: omegaconf.DictConfig) -> None:
     train_path = pathlib.Path(cfg.data.train_key)
     test_path = pathlib.Path(cfg.data.test_key)
     save_path = pathlib.Path(cfg.data.save_key)
 
-    data = pd.read_csv(train_path, index_col="Id").reset_index(drop=True)
+    train_data = pd.read_csv(train_path, index_col="Id")
     test_data = pd.read_csv(test_path, index_col="Id")
 
     cfg_dct = omegaconf.OmegaConf.to_container(cfg, resolve=True)
@@ -32,43 +43,33 @@ def main(cfg: omegaconf.DictConfig) -> None:
     registry.add_from_module(src, prefix="src.")
     algorithm = registry.get_from_params(**cfg_dct["algorithm"])
 
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=200)
+    train_data.reset_index(drop=True, inplace=True)
+    train_index = np.random.choice(np.array(train_data.index), size=int(0.8 * len(train_data)), replace=False)
+    is_train = train_data.index.isin(train_index)
+    
+    train = train_data.iloc[is_train]
+    val = train_data.iloc[~is_train]
+
+    logger.info(f"DATA SIZE: {len(train_data)}")
+    logger.info(f"TRAIN SIZE: {len(train)}")
+    logger.info(f"VAL SIZE: {len(val)}")
 
     logger.info("Training...")
-    metric_history = []
-    for i, (train_index, val_index) in enumerate(kf.split(data, data[TARGET])):
-        logger.info(f"Fold {i}")
 
-        train = data.iloc[train_index]
-        val = data.iloc[val_index]
+    algorithm.fit(train[FEATURES], train[TARGET])
 
-        algorithm.fit(train[FEATURES], train[TARGET])
+    predictions_train = algorithm.predict(train[FEATURES])
+    predictions_val = algorithm.predict(val[FEATURES])
 
-        predictions = algorithm.predict(val[FEATURES])
-        score = roc_auc_score(y_true=val[TARGET], y_score=predictions)
-        logger.info(f"Fold {i} val ROC AUC: {score}")
+    score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
+    score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
 
-        predictions_train = algorithm.predict(train[FEATURES])
-        score_train = roc_auc_score(y_true=train[TARGET], y_score=predictions_train)
-        logger.info(f"Fold {i} train ROC AUC: {score_train}")
-
-        metric_history.append(score)
-        break
-
-    logger.info(f"ROC AUC: {sum(metric_history) / len(metric_history)}")
-    
-    best_thr = 0.0
-    best_f1 = 0.0
-    for thr in np.arange(0.0, 1.0, 0.01):
-        cur_f1 = f1_score(y_true=val[TARGET], y_pred=np.where(predictions >= thr, 1, 0), average="macro")
-        if cur_f1 > best_f1:
-            best_thr = thr
-            best_f1 = cur_f1
-    logger.info(f"Best threshold: {best_thr} with F1: {best_f1}")
+    logger.info(f"Train F1: {score_f1_train}")
+    logger.info(f"Val F1: {score_f1_val}")
 
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()
-    test_predictions["class"] = np.where(algorithm.predict(test_data[FEATURES]) >= best_thr, 1, 0)
+    test_predictions["class"] = np.where(algorithm.predict(test_data[FEATURES]) >= 0.5, 1, 0)
     test_predictions.to_csv(save_path, index=False)
 
 
