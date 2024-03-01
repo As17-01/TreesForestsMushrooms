@@ -1,13 +1,17 @@
 from typing import Callable
 from typing import Optional
+from typing import Sequence
 from typing import cast
 
 import numpy as np
-from scipy.special import xlogy
 
 from src.operations import EqualOperation
 from src.operations import LessOrEqualOperation
 from src.operations import MoreOrEqualOperation
+
+# import time
+
+# from loguru import logger
 
 
 def entropy(y_values: np.ndarray) -> float:
@@ -16,7 +20,7 @@ def entropy(y_values: np.ndarray) -> float:
     # calculate probabilities of each class
     p = count / y_values.shape
     # calculate entropy
-    entropy = -(xlogy(p, p) / np.log(2)).sum()
+    entropy = -(p * np.log(p) / np.log(2)).sum()
     return entropy
 
 
@@ -31,47 +35,41 @@ class SplitDetective:
         self.random_state = random_state
         np.random.seed(seed=random_state)
 
-    def get_best_feature(self):
+    def get_best_feature(self, cat_features_idx: Sequence[int]):
+        # start = time.time()
         # get information gains of all features
-        best_operations, best_igs = map(list, zip(*[self._info_gain(feature_id) for feature_id in self.feature_ids]))
+        best_operations_list = []
+        best_igs_list = []
+        for feature_id in self.feature_ids:
+            is_cat_feature = feature_id in cat_features_idx
 
-        best_feature_idx = np.argmax(best_igs)
+            best_operation, best_entropy_cond = self._get_best_operation(feature_id, is_cat_feature)
+            best_ig = self.cur_entropy - best_entropy_cond
 
-        return self.feature_ids[best_feature_idx], best_operations[best_feature_idx]
+            best_operations_list.append(best_operation)
+            best_igs_list.append(best_ig)
 
-    def _info_gain(self, feature_id: int):
-        # calculate information gain if split target feature
-        best_operation, best_entropy_cond = self._cond_entropy(feature_id)
+        best_feature_idx = np.argmax(best_igs_list)
 
-        best_ig = self.cur_entropy - best_entropy_cond
-        return best_operation, best_ig
+        # end = time.time()
+        # logger.debug(f"SEARCHING TIME: {end - start}")
+        return self.feature_ids[best_feature_idx], best_operations_list[best_feature_idx]
 
-    def _cond_entropy(self, feature_id: int):
-        # get feature values to search the split from
-        feature_vals = np.unique(self.x_values[:, feature_id])
-        if len(feature_vals) > 100:
-            feature_vals = np.random.uniform(low=np.min(feature_vals), high=np.max(feature_vals), size=100)
+    def _get_best_operation(self, feature_id: int, is_categorical: bool):
+        # Create space to search the split from
+        if is_categorical:
+            feature_vals = np.unique(self.x_values[:, feature_id])
+
+            operations_fun_array = [EqualOperation]  # type: ignore
+        else:
+            min_value = np.min(self.x_values[:, feature_id])
+            max_value = np.max(self.x_values[:, feature_id])
+            feature_vals = np.random.uniform(low=min_value, high=max_value, size=500)
             feature_vals = np.sort(feature_vals)
 
-        true_idx = []
-        false_idx = []
-        probs = []
+            operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
 
-        operations_fun_array = [EqualOperation, MoreOrEqualOperation, LessOrEqualOperation]
-        for operation_fun in operations_fun_array:
-            for condition in feature_vals:
-                operation = operation_fun(condition=condition)
-                operation = cast(Callable, operation)
-
-                true_idx.append([operation(val) for val in self.x_values[:, feature_id]])
-                false_idx.append([~operation(val) for val in self.x_values[:, feature_id]])
-                probs.append(np.sum([operation(val) for val in self.x_values[:, feature_id]]) / self.x_values.shape[0])
-
-        H_cond = [
-            entropy(self.y_values[eq_idx]) * p + entropy(self.y_values[neq_idx]) * (1 - p)
-            for (eq_idx, neq_idx, p) in zip(true_idx, false_idx, probs)
-        ]
-
+        H_cond = self._entr_over_space(feature_id, operations_fun_array, feature_vals)
         # WHY WAS HERE ARGMAX
         best_id = np.argmin(H_cond)
 
@@ -79,3 +77,22 @@ class SplitDetective:
         best_operation = operations_fun_array[int(best_id // (len(H_cond) / len(operations_fun_array)))]
 
         return best_operation(condition=best_val), H_cond[best_id]
+
+    def _entr_over_space(self, feature_id: int, operations_fun_array: Sequence[Callable], feature_vals: np.ndarray):
+        H_cond = []
+        for operation_fun in operations_fun_array:
+            for condition in feature_vals:
+                operation = operation_fun(condition=condition)
+                operation = cast(Callable, operation)
+
+                # get_condition_result(operation, self.x_values, self.y_values, feature_id)
+                condition_result = np.array([operation(val) for val in self.x_values[:, feature_id]])
+                true_idx = condition_result.copy()
+                false_idx = ~condition_result.copy()
+                p = np.sum(condition_result) / self.x_values.shape[0]
+
+                true_idx_y_values = self.y_values[true_idx]
+                false_idx_y_values = self.y_values[false_idx]
+
+                H_cond.append(entropy(true_idx_y_values) * p + entropy(false_idx_y_values) * (1 - p))
+        return H_cond

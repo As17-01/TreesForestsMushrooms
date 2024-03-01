@@ -44,6 +44,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
     algorithm = registry.get_from_params(**cfg_dct["algorithm"])
 
     train_data.reset_index(drop=True, inplace=True)
+    np.random.seed(100500)
     train_index = np.random.choice(np.array(train_data.index), size=int(0.8 * len(train_data)), replace=False)
     is_train = train_data.index.isin(train_index)
 
