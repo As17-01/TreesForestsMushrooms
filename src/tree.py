@@ -11,9 +11,10 @@ from src.split_detective import SplitDetective
 
 
 class BaselineDecisionTreeClassifier:
-    def __init__(self, max_depth: int, min_samples_split: int):
+    def __init__(self, max_depth: int, min_samples_split: int, criterion: str):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
+        self.criterion = criterion
 
         self.encoders: Dict[str, Any] = {}
         self.root_node = None
@@ -33,7 +34,7 @@ class BaselineDecisionTreeClassifier:
 
             x_train[col_name] = encoder.encode(x_train[col_name].values)
 
-        self.root_node = self._build_node(x_train.values, y_train.values, None)
+        self.root_node = self._build_node(x_train.values, y_train.values, self.root_node)
 
     def predict(self, x_test: pd.DataFrame):
         x_test = x_test.copy()
@@ -69,7 +70,7 @@ class BaselineDecisionTreeClassifier:
                 node.score = 0.0
             return node
 
-        sd = SplitDetective(x_values, y_values)
+        sd = SplitDetective(x_values, y_values, self.criterion)
         best_feature_id, best_operation = sd.get_best_feature(cat_features_idx=[0, 1, 2])
         node.split_feature_id = best_feature_id
         node.operation = best_operation

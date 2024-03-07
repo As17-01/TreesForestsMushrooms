@@ -24,10 +24,28 @@ def entropy(y_values: np.ndarray) -> float:
     return entropy
 
 
+def gini(y_values: np.ndarray) -> float:
+    # count occurencies of each class
+    count = np.unique(y_values, return_counts=True)[1]
+    # calculate probabilities of each class
+    p = count / y_values.shape
+    # calculate gini
+    entropy = 1 - (p ** 2).sum()
+    return entropy
+
+
 class SplitDetective:
-    def __init__(self, x_values: np.ndarray, y_values: np.ndarray, random_state: Optional[int] = None):
+    def __init__(self, x_values: np.ndarray, y_values: np.ndarray, criterion: str, random_state: Optional[int] = None):
         self.x_values = x_values
         self.y_values = y_values
+
+        self.criterion = criterion
+        if criterion == "gini":
+            self._criterion = gini
+        elif criterion == "entropy":
+            self._criterion = entropy
+        else:
+            raise ValueError("Only `gini` and `entropy` criterions are allowed!")
 
         self.feature_ids = np.arange(self.x_values.shape[1])
         self.cur_entropy = entropy(self.y_values)
@@ -91,5 +109,5 @@ class SplitDetective:
                 true_idx_y_values = self.y_values[true_idx]
                 false_idx_y_values = self.y_values[false_idx]
 
-                H_cond.append(entropy(true_idx_y_values) * p + entropy(false_idx_y_values) * (1 - p))
+                H_cond.append(self._criterion(true_idx_y_values) * p + self._criterion(false_idx_y_values) * (1 - p))
         return H_cond

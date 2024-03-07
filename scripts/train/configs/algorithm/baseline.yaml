@@ -1,3 +1,4 @@
 _target_: src.BaselineDecisionTreeClassifier
-max_depth: 13
+max_depth: 5
 min_samples_split: 10
+criterion: "gini"
