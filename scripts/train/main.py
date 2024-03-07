@@ -45,28 +45,39 @@ def main(cfg: omegaconf.DictConfig) -> None:
 
     train_data.reset_index(drop=True, inplace=True)
     np.random.seed(100500)
-    train_index = np.random.choice(np.array(train_data.index), size=int(0.8 * len(train_data)), replace=False)
-    is_train = train_data.index.isin(train_index)
 
-    train = train_data.iloc[is_train]
-    val = train_data.iloc[~is_train]
+    avg_train_f1 = 0
+    avg_val_f1 = 0
+    for i in range(5):
+        train_index = np.random.choice(np.array(train_data.index), size=int(0.70 * len(train_data)), replace=False)
+        is_train = train_data.index.isin(train_index)
 
-    logger.info(f"DATA SIZE: {len(train_data)}")
-    logger.info(f"TRAIN SIZE: {len(train)}")
-    logger.info(f"VAL SIZE: {len(val)}")
+        train = train_data.iloc[is_train]
+        val = train_data.iloc[~is_train]
 
-    logger.info("Training...")
+        if i == 0:
+            logger.info(f"DATA SIZE: {len(train_data)}")
+            logger.info(f"TRAIN SIZE: {len(train)}")
+            logger.info(f"VAL SIZE: {len(val)}")
 
-    algorithm.fit(train[FEATURES], train[TARGET])
+            logger.info("Training...")
 
-    predictions_train = algorithm.predict(train[FEATURES])
-    predictions_val = algorithm.predict(val[FEATURES])
+        algorithm.fit(train[FEATURES], train[TARGET])
 
-    score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
-    score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
+        predictions_train = algorithm.predict(train[FEATURES])
+        predictions_val = algorithm.predict(val[FEATURES])
 
-    logger.info(f"Train F1: {score_f1_train}")
-    logger.info(f"Val F1: {score_f1_val}")
+        score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
+        score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
+
+        avg_train_f1 += score_f1_train / 5
+        avg_val_f1 += score_f1_val / 5
+
+        logger.info(f"FOLD {i} Train F1: {score_f1_train}")
+        logger.info(f"FOLD {i} Val F1: {score_f1_val}")
+
+    logger.info(f"AVG {i} Train F1: {avg_train_f1}")
+    logger.info(f"AVG {i} Val F1: {avg_val_f1}")
 
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()

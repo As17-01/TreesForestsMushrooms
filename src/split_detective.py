@@ -80,7 +80,11 @@ class SplitDetective:
 
             operations_fun_array = [EqualOperation]  # type: ignore
         else:
-            _, feature_vals = np.histogram(self.x_values[:, feature_id], bins="auto")
+            num_bins = "auto"
+            _, feature_vals0 = np.histogram(self.x_values[self.y_values == 0, feature_id], bins=num_bins)
+            _, feature_vals1 = np.histogram(self.x_values[self.y_values == 1, feature_id], bins=num_bins)
+            feature_vals = np.sort(np.concatenate([feature_vals0, feature_vals1]))
+
 
             operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
 
