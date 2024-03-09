@@ -76,8 +76,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
         logger.info(f"FOLD {i} Train F1: {score_f1_train}")
         logger.info(f"FOLD {i} Val F1: {score_f1_val}")
 
-    logger.info(f"AVG {i} Train F1: {avg_train_f1}")
-    logger.info(f"AVG {i} Val F1: {avg_val_f1}")
+    logger.info(f"AVG Train F1: {avg_train_f1}")
+    logger.info(f"AVG Val F1: {avg_val_f1}")
 
     logger.info("Predicting...")
     test_predictions = test_data.reset_index()[["Id"]].copy()
