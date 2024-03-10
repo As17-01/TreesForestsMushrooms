@@ -1,0 +1,3 @@
+train_key: ../../data/train.csv
+test_key: ../../data/test.csv
+save_key: ../../data/submissions/random_forest.csv
