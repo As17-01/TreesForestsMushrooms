@@ -71,7 +71,9 @@ class BaselineDecisionTreeClassifier:
                 node.score = 0.0
             return node
 
-        sd = SplitDetective(x_values=x_values, y_values=y_values, criterion=self.criterion, random_state=self.random_state)
+        sd = SplitDetective(
+            x_values=x_values, y_values=y_values, criterion=self.criterion, random_state=self.random_state
+        )
         best_feature_id, best_operation = sd.get_best_feature(cat_features_idx=[0, 1, 2])
         node.split_feature_id = best_feature_id
         node.operation = best_operation

@@ -30,7 +30,7 @@ def gini(y_values: np.ndarray) -> float:
     # calculate probabilities of each class
     p = count / y_values.shape
     # calculate gini
-    entropy = 1 - (p ** 2).sum()
+    entropy = 1 - (p**2).sum()
     return entropy
 
 
