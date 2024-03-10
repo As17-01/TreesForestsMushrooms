@@ -47,9 +47,9 @@ def main(cfg: omegaconf.DictConfig) -> None:
 
     avg_train_f1 = 0
     avg_val_f1 = 0
-    num_folds = 5
+    num_folds = 1
     for i in range(num_folds):
-        np.random.seed(100500 + i)
+        np.random.seed(100504 + i)
         train_index = np.random.choice(np.array(train_data.index), size=int(0.80 * len(train_data)), replace=False)
 
         is_train = train_data.index.isin(train_index)
