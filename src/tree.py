@@ -11,10 +11,11 @@ from src.split_detective import SplitDetective
 
 
 class BaselineDecisionTreeClassifier:
-    def __init__(self, max_depth: int, min_samples_split: int, criterion: str):
+    def __init__(self, max_depth: int, min_samples_split: int, criterion: str, random_state: Optional[int] = None):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.criterion = criterion
+        self.random_state = random_state
 
         self.encoders: Dict[str, Any] = {}
         self.root_node = None
@@ -70,7 +71,7 @@ class BaselineDecisionTreeClassifier:
                 node.score = 0.0
             return node
 
-        sd = SplitDetective(x_values, y_values, self.criterion)
+        sd = SplitDetective(x_values=x_values, y_values=y_values, criterion=self.criterion, random_state=self.random_state)
         best_feature_id, best_operation = sd.get_best_feature(cat_features_idx=[0, 1, 2])
         node.split_feature_id = best_feature_id
         node.operation = best_operation

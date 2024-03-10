@@ -44,14 +44,14 @@ def main(cfg: omegaconf.DictConfig) -> None:
     algorithm = registry.get_from_params(**cfg_dct["algorithm"])
 
     train_data.reset_index(drop=True, inplace=True)
-    np.random.seed(100500)
 
     avg_train_f1 = 0
     avg_val_f1 = 0
-    for i in range(5):
-        train_index = np.random.choice(np.array(train_data.index), size=int(0.70 * len(train_data)), replace=False)
-        is_train = train_data.index.isin(train_index)
+    for i in range(20):
+        np.random.seed(100500 + i)
+        train_index = np.random.choice(np.array(train_data.index), size=int(0.80 * len(train_data)), replace=False)
 
+        is_train = train_data.index.isin(train_index)
         train = train_data.iloc[is_train]
         val = train_data.iloc[~is_train]
 
@@ -70,8 +70,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
         score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
         score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
 
-        avg_train_f1 += score_f1_train / 5
-        avg_val_f1 += score_f1_val / 5
+        avg_train_f1 += score_f1_train / 20
+        avg_val_f1 += score_f1_val / 20
 
         logger.info(f"FOLD {i} Train F1: {score_f1_train}")
         logger.info(f"FOLD {i} Val F1: {score_f1_val}")
