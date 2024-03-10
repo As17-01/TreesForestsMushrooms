@@ -87,10 +87,9 @@ class BaselineDecisionTreeClassifier:
         new_node = Node()
         new_node.set_height(node.height + 1)
 
-        if type == "true_node":
-            idx = [node.operation(val) for val in x_values[:, node.split_feature_id]]
-        else:
-            idx = [~node.operation(val) for val in x_values[:, node.split_feature_id]]
+        idx = node.operation(x_values[:, node.split_feature_id])
+        if type == "false_node":
+            idx = ~idx
 
         x_values = x_values[idx]
         y_values = y_values[idx]

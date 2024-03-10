@@ -95,7 +95,8 @@ class SplitDetective:
             #     )
             # )
 
-            operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
+            # operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
+            operations_fun_array = [MoreOrEqualOperation]  # type: ignore
 
         H_cond = self._entr_over_space(feature_id, operations_fun_array, feature_vals)
         # WHY WAS HERE ARGMAX
@@ -113,8 +114,8 @@ class SplitDetective:
                 operation = operation_fun(condition=condition)
                 operation = cast(Callable, operation)
 
-                # get_condition_result(operation, self.x_values, self.y_values, feature_id)
-                condition_result = np.array([operation(val) for val in self.x_values[:, feature_id]])
+                # MAKE SURE OPERATION IS VALID OVER ARRAYS
+                condition_result = operation(self.x_values[:, feature_id])
                 true_idx = condition_result.copy()
                 false_idx = ~condition_result.copy()
                 p = np.sum(condition_result) / self.x_values.shape[0]
