@@ -47,7 +47,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
 
     avg_train_f1 = 0
     avg_val_f1 = 0
-    for i in range(20):
+    num_folds = 5
+    for i in range(num_folds):
         np.random.seed(100500 + i)
         train_index = np.random.choice(np.array(train_data.index), size=int(0.80 * len(train_data)), replace=False)
 
@@ -70,8 +71,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
         score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
         score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
 
-        avg_train_f1 += score_f1_train / 20
-        avg_val_f1 += score_f1_val / 20
+        avg_train_f1 += score_f1_train / num_folds
+        avg_val_f1 += score_f1_val / num_folds
 
         logger.info(f"FOLD {i} Train F1: {score_f1_train}")
         logger.info(f"FOLD {i} Val F1: {score_f1_val}")

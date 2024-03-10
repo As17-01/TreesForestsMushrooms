@@ -1,5 +1,5 @@
 _target_: src.BaselineDecisionTreeClassifier
-max_depth: 22
-min_samples_split: 2
+max_depth: 21
+min_samples_split: 15
 criterion: "entropy"
 random_state: 100
