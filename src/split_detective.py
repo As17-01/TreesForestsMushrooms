@@ -80,8 +80,20 @@ class SplitDetective:
 
             operations_fun_array = [EqualOperation]  # type: ignore
         else:
-            min_el, max_el = np.min(self.x_values[:, feature_id]), np.max(self.x_values[:, feature_id])
-            feature_vals = np.sort(np.random.normal(min_el, max_el, 20))
+            feature_vals = np.sort(
+                np.random.uniform(
+                    np.min(self.x_values[:, feature_id]),
+                    np.max(self.x_values[:, feature_id]),
+                    20,
+                )
+            )
+            # feature_vals = np.sort(
+            #     np.random.normal(
+            #         np.mean(self.x_values[:, feature_id]),
+            #         np.std(self.x_values[:, feature_id]),
+            #         20,
+            #     )
+            # )
 
             operations_fun_array = [MoreOrEqualOperation, LessOrEqualOperation]  # type: ignore
 
