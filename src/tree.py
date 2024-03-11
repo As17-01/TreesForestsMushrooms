@@ -20,31 +20,31 @@ class BaselineDecisionTreeClassifier:
         self.encoders: Dict[str, Any] = {}
         self.root_node = None
 
+    def _process_categorical(self, x: pd.DataFrame, is_train: bool = False) -> pd.DataFrame:
+        if is_train:
+            self.encoders = {}
+            for col_name in x.select_dtypes(include=["object"]):
+                encoder = LabelEncoder()
+
+                encoder.fit(x[col_name].values)
+                self.encoders[col_name] = encoder
+
+                x[col_name] = encoder.encode(x[col_name].values)
+        else:
+            for col_name, encoder in self.encoders.items():
+                x[col_name] = encoder.encode(x[col_name].values)
+        return x
+
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
         x_train = x_train.copy()
         y_train = y_train.copy()
+        x_train = self._process_categorical(x=x_train, is_train=True)
 
-        self.encoders = {}
-        self.root_node = None
-
-        for col_name in x_train.select_dtypes(include=["object"]):
-            encoder = LabelEncoder()
-
-            encoder.fit(x_train[col_name].values)
-            self.encoders[col_name] = encoder
-
-            x_train[col_name] = encoder.encode(x_train[col_name].values)
-
-        self.root_node = self._build_node(x_train.values, y_train.values, self.root_node)
+        self.root_node = self._build_node(x_train.values, y_train.values, None)
 
     def predict(self, x_test: pd.DataFrame):
         x_test = x_test.copy()
-
-        for col_name, encoder in self.encoders.items():
-            x_test[col_name] = encoder.encode(x_test[col_name].values)
-
-        if self.root_node is None:
-            raise ValueError("Train the model first!")
+        x_test = self._process_categorical(x=x_test, is_train=True)
 
         ans = np.zeros(x_test.shape[0], dtype="float32")
         for i in range(x_test.shape[0]):

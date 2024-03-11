@@ -1,4 +1,6 @@
-from typing import Any, Union
+from typing import Any
+from typing import Union
+
 import numpy as np
 
 
