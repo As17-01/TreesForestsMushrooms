@@ -1,6 +1,6 @@
 _target_: src.RandomForest
-num_estimators: 50
-max_depth: 21
-min_samples_split: 15
+num_estimators: 100
+max_depth: 27
+min_samples_split: 5
 criterion: "entropy"
 random_state: 100

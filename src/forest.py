@@ -25,30 +25,43 @@ class RandomForest:
         self.random_state = random_state
 
         self.encoders: Dict[str, Any] = {}
+        # self.drop_features = []
         self.trees = []
+
+    def _process_categorical(self, x: pd.DataFrame, is_train: bool = False) -> pd.DataFrame:
+        if is_train:
+            self.encoders = {}
+            for col_name in x.select_dtypes(include=["object"]):
+                encoder = LabelEncoder()
+
+                encoder.fit(x[col_name].values)
+                self.encoders[col_name] = encoder
+
+                x[col_name] = encoder.encode(x[col_name].values)
+        else:
+            for col_name, encoder in self.encoders.items():
+                x[col_name] = encoder.encode(x[col_name].values)
+        return x
 
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
         x_train = x_train.copy()
         y_train = y_train.copy()
+        x_train = self._process_categorical(x=x_train, is_train=True)
 
-        self.encoders = {}
         self.trees = []
-
-        for col_name in x_train.select_dtypes(include=["object"]):
-            encoder = LabelEncoder()
-
-            encoder.fit(x_train[col_name].values)
-            self.encoders[col_name] = encoder
-
-            x_train[col_name] = encoder.encode(x_train[col_name].values)
-
         for i in range(self.num_estimators):
             np.random.seed(self.random_state * 10 + i * 4)
             train_index = np.random.choice(np.array(x_train.index), size=int(0.80 * len(x_train)), replace=False)
 
             is_train = x_train.index.isin(train_index)
-            cur_x_train = x_train.iloc[is_train]
-            cur_y_train = y_train.iloc[is_train]
+            cur_x_train = x_train.iloc[is_train].copy()
+            cur_y_train = y_train.iloc[is_train].copy()
+
+            # n_drop_features = np.random.randint(0, len(cur_x_train.columns) - 1)
+            # drop_features = np.random.choice(cur_x_train.columns, n_drop_features, replace=False)
+
+            # cur_x_train.drop(columns=drop_features, inplace=True)
+            # self.drop_features.append(drop_features)
 
             tree = BaselineDecisionTreeClassifier(
                 self.max_depth, self.min_samples_split, self.criterion, self.random_state
@@ -59,15 +72,11 @@ class RandomForest:
 
     def predict(self, x_test: pd.DataFrame):
         x_test = x_test.copy()
-
-        for col_name, encoder in self.encoders.items():
-            x_test[col_name] = encoder.encode(x_test[col_name].values)
-
-        if len(self.trees) == 0:
-            raise ValueError("Train the model first!")
+        x_test = self._process_categorical(x=x_test, is_train=True)
 
         ans = np.zeros(x_test.shape[0], dtype="float32")
         for tree in self.trees:
+            # cur_x_test = x_test.drop(columns=drop_features)
             for i in range(x_test.shape[0]):
                 ans[i] += tree.root_node.forward(x_test.values[i]) / len(self.trees)
         return ans

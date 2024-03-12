@@ -29,6 +29,15 @@ def macro_f1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return f1_score
 
 
+def f1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    tp = np.sum(y_true[y_true == 1] == y_pred[y_true == 1])
+    fp = np.sum(y_true[y_true == 1] != y_pred[y_true == 1])
+    fn = np.sum(y_true[y_true != 1] != y_pred[y_true != 1])
+
+    f1_score = tp / (tp + (fp + fn) / 2)
+    return f1_score
+
+
 @hydra.main(config_path="configs", config_name="config", version_base="1.2")
 def main(cfg: omegaconf.DictConfig) -> None:
     train_path = pathlib.Path(cfg.data.train_key)
