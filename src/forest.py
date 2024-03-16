@@ -51,11 +51,10 @@ class RandomForest:
         self.trees = []
         for i in range(self.num_estimators):
             np.random.seed(self.random_state * 10 + i * 4)
-            train_index = np.random.choice(np.array(x_train.index), size=int(0.80 * len(x_train)), replace=False)
+            train_index = np.random.choice(np.arange(len(x_train)), size=int(len(x_train)), replace=True)
 
-            is_train = x_train.index.isin(train_index)
-            cur_x_train = x_train.iloc[is_train].copy()
-            cur_y_train = y_train.iloc[is_train].copy()
+            cur_x_train = x_train.iloc[train_index].copy()
+            cur_y_train = y_train.iloc[train_index].copy()
 
             # n_drop_features = np.random.randint(0, len(cur_x_train.columns) - 1)
             # drop_features = np.random.choice(cur_x_train.columns, n_drop_features, replace=False)
