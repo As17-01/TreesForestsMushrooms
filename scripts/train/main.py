@@ -59,9 +59,14 @@ def main(cfg: omegaconf.DictConfig) -> None:
     num_folds = 1
     for i in range(num_folds):
         np.random.seed(100504 + i)
-        train_index = np.random.choice(np.array(train_data.index), size=int(0.80 * len(train_data)), replace=False)
+        is_target1 = train_data[TARGET] == 1
+        target0_size = int(0.85 * len(train_data[~is_target1]))
+        target1_size = int(0.85 * len(train_data) - target0_size)
 
-        is_train = train_data.index.isin(train_index)
+        train0_index = np.random.choice(np.array(train_data[~is_target1].index), size=target0_size, replace=False)
+        train1_index = np.random.choice(np.array(train_data[is_target1].index), size=target1_size, replace=False)
+
+        is_train = train_data.index.isin(np.concatenate([train0_index, train1_index]))
         train = train_data.iloc[is_train]
         val = train_data.iloc[~is_train]
 

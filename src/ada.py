@@ -35,27 +35,32 @@ class AdaBoost(BaseModel):
         x_train = self._process_categorical(x=x_train, is_train=True)
 
         self.trees = []
+        self.weights = []
         sample_weights = np.ones(len(y_train)) / len(y_train)
+
         for i in range(self.num_estimators):
+            if self.random_state is not None:
+                np.random.seed(self.random_state * 10 + i * 4)
+            train_index = np.random.choice(np.arange(len(x_train)), size=int(len(x_train)), replace=True)
+
+            cur_x_train = x_train.iloc[train_index].copy()
+            cur_y_train = y_train.iloc[train_index].copy()
+
             tree = BaselineDecisionTreeClassifier(
-                self.max_depth, self.min_samples_split, self.criterion, self.random_state
+                self.max_depth, self.min_samples_split, self.criterion, self.random_state + i
             )
-            tree.fit(x_train, y_train)
-            pred = tree.predict(x_train)
+            tree.fit(cur_x_train, cur_y_train)
+            pred = tree.predict(cur_x_train)
+            binarized_pred = np.where(pred > 0.5, 1, 0)
 
-            e = np.sum(np.where(pred != y_train, sample_weights, 0))
+            error_rate = np.sum(binarized_pred != y_train) / len(y_train)
+            alpha = np.log((1 - error_rate) / (error_rate + 1e-10)) / 2
 
-            # 3.find alpha
-            alpha = np.log((1 - e) / (e + 1e-10)) / 2
+            sample_weights = sample_weights * np.exp(-alpha * y_train * binarized_pred)
 
-            # 4. recompute w_i
-            sample_weights = sample_weights * np.exp(((pred == y_train).astype(int) * 2 - 1) * alpha)
-
-            # 4.5 save estimator
             self.trees.append(tree)
             self.weights.append(alpha)
 
-            # 5. renormalize weights
             sample_weights = sample_weights / sample_weights.sum()
 
     def predict(self, x_test: pd.DataFrame):
@@ -67,8 +72,8 @@ class AdaBoost(BaseModel):
             weighted_sum = 0
             for tree, w in zip(self.trees, self.weights):
                 pred = tree.root_node.forward(x_test.values[i])
-                pred = np.where(pred == 0, 1, -1)
 
+                pred = np.where(pred > 0.5, 1, -1)
                 weighted_sum += w * pred
-            ans[i] = np.where(weighted_sum > 0, 0, 1)
+            ans[i] = np.where(weighted_sum > 0, 1, 0)
         return ans
