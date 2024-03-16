@@ -1,5 +1,9 @@
 # Trees, Forests, Mushrooms
 
+Link to the competition: 
+
+`https://www.kaggle.com/competitions/hse-ds-hw1-trees-forests-mushrooms/overview`
+
 ## Installation
 
 Install the project and requirements with the following command:
