@@ -5,12 +5,12 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from src.encoder import LabelEncoder
+from src.base import BaseModel
 from src.node import Node
 from src.split_detective import SplitDetective
 
 
-class BaselineDecisionTreeClassifier:
+class BaselineDecisionTreeClassifier(BaseModel):
     def __init__(self, max_depth: int, min_samples_split: int, criterion: str, random_state: Optional[int] = None):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -20,21 +20,6 @@ class BaselineDecisionTreeClassifier:
         self.encoders: Dict[str, Any] = {}
         self.root_node = None
 
-    def _process_categorical(self, x: pd.DataFrame, is_train: bool = False) -> pd.DataFrame:
-        if is_train:
-            self.encoders = {}
-            for col_name in x.select_dtypes(include=["object"]):
-                encoder = LabelEncoder()
-
-                encoder.fit(x[col_name].values)
-                self.encoders[col_name] = encoder
-
-                x[col_name] = encoder.encode(x[col_name].values)
-        else:
-            for col_name, encoder in self.encoders.items():
-                x[col_name] = encoder.encode(x[col_name].values)
-        return x
-
     def fit(self, x_train: pd.DataFrame, y_train: pd.Series):
         x_train = x_train.copy()
         y_train = y_train.copy()
@@ -43,6 +28,9 @@ class BaselineDecisionTreeClassifier:
         self.root_node = self._build_node(x_train.values, y_train.values, None)
 
     def predict(self, x_test: pd.DataFrame):
+        if self.root_node is None:
+            raise ValueError("Train the model first!")
+
         x_test = x_test.copy()
         x_test = self._process_categorical(x=x_test, is_train=True)
 
