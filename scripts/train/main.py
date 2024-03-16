@@ -77,8 +77,8 @@ def main(cfg: omegaconf.DictConfig) -> None:
         predictions_train = algorithm.predict(train[FEATURES])
         predictions_val = algorithm.predict(val[FEATURES])
 
-        score_f1_train = macro_f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
-        score_f1_val = macro_f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
+        score_f1_train = f1(y_true=train[TARGET], y_pred=np.where(predictions_train >= 0.5, 1, 0))
+        score_f1_val = f1(y_true=val[TARGET], y_pred=np.where(predictions_val >= 0.5, 1, 0))
 
         avg_train_f1 += score_f1_train / num_folds
         avg_val_f1 += score_f1_val / num_folds
