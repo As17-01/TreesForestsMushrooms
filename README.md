@@ -25,5 +25,5 @@ You can use `scripts/download/main.py` script to download the data from Kaggle. 
 To train the submitted models you can write the following commands inside `scripts/train`:
 
 * `python main.py data=decision_tree algorithm=decision_tree`. Time to execute: 5 seconds
-* `python main.py data=random_forest algorithm=random_forest`. Time to execute: 4 minutes 24 seconds
+* `python main.py data=random_forest algorithm=random_forest`. Time to execute: 4 minutes 49 seconds
 * `python main.py data=ada_boost algorithm=ada_boost`. Time to execute: 3 minutes 38 seconds
